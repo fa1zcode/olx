@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
-const helpers = require('../helpers/utility')
+var path = require("path");
+const helpers = require("../helpers/utility");
 
 /* GET home page. */
 module.exports = function (db) {
@@ -9,43 +10,39 @@ module.exports = function (db) {
     console.log(url);
 
     const params = [];
-    params.push(`userid = ${req.session.user.id}`);
 
-    if (req.query.task) {
-      params.push(`task like '${req.query.task}' `);
-    }
-
-    if (req.query.complete) {
-      params.push(`complete = ${req.query.complete}`);
+    if (req.query.name) {
+      params.push(`name ilike '${req.query.name}' `);
     }
 
     const page = req.query.page || 1; // if no req.query.page, page = 1
     const limit = 3; // limit 3 items in one page
     const offset = (page - 1) * limit;
-    let sql = "select count(*) as total from todo";
+    let sql = "select count(*) as total from categories";
 
     if (params.length > 0) {
       sql += ` where ${params.join(" and ")}`;
     }
 
-    db.get(sql, (err, raws) => {
-      const jumlahHalaman = Math.ceil(raws.total / limit);
-      sql = "select * from todo";
+    db.query(sql, (err, raws) => {
+      const jumlahHalaman = Math.ceil(raws.rows[0].total / limit);
+      sql = "select * from categories";
       if (params.length > 0) {
         sql += ` where ${params.join(" and ")}`;
       }
-      sql += ` limit ? offset ?`;
+      sql += ` limit $1 offset $2`;
       console.log(sql);
-      db.all(sql, [limit, offset], (err, raws) => {
+      db.query(sql, [limit, offset], (err, data) => {
         if (err) return res.send(err);
         //console.log(raws)
-        res.render("list", {
-          data: raws,
+        res.render("admin/categories/list", {
+          data: data.rows,
           page,
           jumlahHalaman,
           query: req.query,
           url,
           user: req.session.user,
+          successMessage: req.flash("successMessage"),
         });
       });
     });
@@ -58,7 +55,7 @@ module.exports = function (db) {
   router.post("/add", helpers.isLoggedIn, function (req, res) {
     task = req.body.task;
     // query binding = use (?) to prevent hack via sql injection
-    db.run(
+    db.query(
       "insert into todo(task, userid) values (?,?) ",
       [task, req.session.user.id],
       (err, raws) => {
@@ -71,7 +68,7 @@ module.exports = function (db) {
 
   router.get("/delete/:id", helpers.isLoggedIn, function (req, res) {
     const id = Number(req.params.id);
-    db.run("delete from todo where id = ? ", [id], (err, raws) => {
+    db.query("delete from todo where id = ? ", [id], (err, raws) => {
       if (err) return res.send(err);
       req.flash("loginMessage", "Task berhasil dihapus");
       console.log(raws);
@@ -81,7 +78,7 @@ module.exports = function (db) {
 
   router.get("/edit/:id", helpers.isLoggedIn, function (req, res) {
     const id = Number(req.params.id);
-    db.get("select * from todo where id = ?", [id], (err, raws) => {
+    db.query("select * from todo where id = ?", [id], (err, raws) => {
       console.log(err);
       if (err) return res.send(err);
       res.render("edit", { data: raws });
@@ -92,7 +89,7 @@ module.exports = function (db) {
     const id = Number(req.params.id);
     task = req.body.task;
     complete = JSON.parse(req.body.complete);
-    db.get(
+    db.query(
       "update todo set task = (?), complete = (?) where id = ?",
       [task, complete, id],
       (err, raws) => {

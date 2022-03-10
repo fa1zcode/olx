@@ -4,7 +4,10 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/stylesheets/style.css" />
     <link rel="stylesheet" href="/stylesheets/carousel.css" />
-    <script src="https://kit.fontawesome.com/a99662301d.js" crossorigin="anonymous"></script>
+    <script
+      src="https://kit.fontawesome.com/a99662301d.js"
+      crossorigin="anonymous"
+    ></script>
     <style>
       .container {
         margin: 0;
@@ -66,8 +69,6 @@
         align-items: center;
         gap: 10px;
       }
-
-
     </style>
   </head>
   <body>
@@ -101,7 +102,9 @@
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
         </form>
-        <a href="/login">login</a>
+        <a href="<%= user ? '/profile' : '/login' %>"
+          ><%= user ? user.fullname : 'login' %></a
+        >
         <a class="btn" href="/sell">jual</a>
       </div>
 
@@ -138,10 +141,9 @@
       </div>
       <div class="ads">
         <div class="item-ads">
-          <img src="/images/ads/ducatiads.jpg" alt="">
+          <img src="/images/ads/ducatiads.jpg" alt="" />
           <h2>price</h2>
           <p>title</p>
-          
         </div>
       </div>
     </div>
