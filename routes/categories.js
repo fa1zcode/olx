@@ -3,6 +3,7 @@ var router = express.Router();
 var path = require("path");
 const helpers = require("../helpers/utility");
 
+
 /* GET home page. */
 module.exports = function (db) {
   router.get("/", helpers.isLoggedIn, function (req, res) {
