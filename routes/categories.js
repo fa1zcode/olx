@@ -49,6 +49,7 @@ module.exports = function (db) {
           url,
           user: req.session.user,
           successMessage: req.flash("successMessage"),
+          path: req.originalUrl
         });
       });
     });
@@ -58,6 +59,7 @@ module.exports = function (db) {
     res.render("admin/categories/form", {
       data: {},
       user: req.session.user,
+      path: req.originalUrl
     });
   });
 
@@ -89,6 +91,7 @@ module.exports = function (db) {
       res.render("admin/categories/form", {
         data: raws.rows[0],
         user: req.session.user,
+        path: req.originalUrl
       });
     });
   });

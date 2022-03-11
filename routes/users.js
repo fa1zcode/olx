@@ -1,8 +1,8 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
-var path = require('path');
-const helpers = require('../helpers/utility')
-const bcrypt = require('bcrypt');
+var path = require("path");
+const helpers = require("../helpers/utility");
+const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
 /* GET home page. */
@@ -61,6 +61,7 @@ module.exports = function (db) {
           url,
           user: req.session.user,
           successMessage: req.flash("successMessage"),
+          path: req.originalUrl
         });
       });
     });
@@ -68,20 +69,75 @@ module.exports = function (db) {
 
   router.get("/add", helpers.isLoggedIn, function (req, res) {
     res.render("admin/users/form", {
-      data: {},
       user: req.session.user,
+      data: {},
+      path: req.originalUrl
     });
   });
 
   router.post("/add", function (req, res) {
-    db.query(
-      "insert into users(fullname) values ($1)",
-      [req.body.fullname],
-      (err) => {
-        if (err) return res.send(err);
-        res.redirect("/users");
+    bcrypt.hash(req.body.pass, saltRounds, function (err, hash) {
+      if (err) {
+        console.log(err);
+        req.flash("successMessage", `gagal bikin password`);
+        return res.redirect("/users");
       }
-    );
+      if (!req.files || Object.keys(req.files).length === 0) {
+        db.query(
+          "insert into users(fullname, email, phone, pass, isadmin) values ($1, $2, $3, $4, $5)",
+          [
+            req.body.fullname,
+            req.body.email,
+            req.body.phone,
+            hash,
+            JSON.parse(req.body.isadmin),
+          ],
+          (err) => {
+            if (err) {
+              console.log(err);
+              req.flash("successMessage", `gagal bikin user`);
+              return res.redirect("/users");
+            }
+            res.redirect("/users");
+          }
+        );
+      } else {
+        const file = req.files.avatar;
+        const fileName = `${Date.now()}-${file.name}`;
+        uploadPath = path.join(
+          __dirname,
+          "..",
+          "public",
+          "images",
+          "avatars",
+          fileName
+        );
+
+        // Use the mv() method to place the file somewhere on your server
+        file.mv(uploadPath, function (err) {
+          if (err) return res.status(500).send(err);
+          db.query(
+            "insert into users(fullname, email, phone, pass, isadmin, avatar) values ($1, $2, $3, $4, $5, $6)",
+            [
+              req.body.fullname,
+              req.body.email,
+              req.body.phone,
+              hash,
+              JSON.parse(req.body.isadmin),
+              fileName,
+            ],
+            (err) => {
+              if (err) {
+                console.log(err);
+                req.flash("successMessage", `gagal bikin user plus avatar`);
+                return res.redirect("/users");
+              }
+              res.redirect("/users");
+            }
+          );
+        });
+      }
+    });
   });
 
   router.get("/delete/:id", helpers.isLoggedIn, function (req, res) {
@@ -100,6 +156,7 @@ module.exports = function (db) {
       res.render("admin/users/form", {
         data: raws.rows[0],
         user: req.session.user,
+        path: req.originalUrl
       });
     });
   });
