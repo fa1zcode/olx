@@ -35,12 +35,12 @@
                             <tr>
                                 <th><a
                                         href="<%= url.replace(`sortBy=${query.sortBy}`, `sortBy=id`).replace(`sortMode=${query.sortMode}`, `sortMode=${query.sortMode == 'asc' ? 'desc' : 'asc'}`)  %>"><i
-                                            class="fa-solid <%= query.sortBy == 'id' ? query.sortMode == 'asc' ? 'fa-sort-up' : 'fa-sort-down' : 'fa-sort' %>"></i>
-                                        Id</a></th>
+                                            class="fa-solid <%= query.sortBy == 'id' ? query.sortMode == 'asc' ? 'fa-sort-up' : 'fa-sort-down' : 'fa-sort' %>"></i></a>
+                                        Id</th>
                                 <th><a
                                         href="<%= url.replace(`sortBy=${query.sortBy}`, `sortBy=name`).replace(`sortMode=${query.sortMode}`, `sortMode=${query.sortMode == 'asc' ? 'desc' : 'asc'}`)  %>"><i
-                                            class="fa-solid <%= query.sortBy == 'name' ? query.sortMode == 'asc' ? 'fa-sort-up' : 'fa-sort-down' : 'fa-sort' %>"></i>
-                                        Name</a></th>
+                                            class="fa-solid <%= query.sortBy == 'name' ? query.sortMode == 'asc' ? 'fa-sort-up' : 'fa-sort-down' : 'fa-sort' %>"></i></a>
+                                        Name</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>

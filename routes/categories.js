@@ -6,35 +6,40 @@ const helpers = require("../helpers/utility");
 /* GET home page. */
 module.exports = function (db) {
   router.get("/", helpers.isLoggedIn, function (req, res) {
-    const url = req.url == "/" ? "/?page=1" : req.url;
+    const url =
+      req.url == "/"
+        ? "/categories?page=1&sortBy=id&sortMode=asc"
+        : req.url.replace("/", "/categories");
     console.log(url);
 
     const params = [];
 
     if (req.query.name) {
-      params.push(`name ilike '${req.query.name}' `);
+      params.push(`name ilike '%${req.query.name}%'`);
     }
 
-    const page = req.query.page || 1; // if no req.query.page, page = 1
-    const limit = 3; // limit 3 items in one page
+    const page = req.query.page || 1;
+    const limit = 3;
     const offset = (page - 1) * limit;
     let sql = "select count(*) as total from categories";
-
     if (params.length > 0) {
       sql += ` where ${params.join(" and ")}`;
     }
-
-    db.query(sql, (err, raws) => {
-      const jumlahHalaman = Math.ceil(raws.rows[0].total / limit);
+    db.query(sql, (err, data) => {
+      const jumlahHalaman = Math.ceil(data.rows[0].total / limit);
       sql = "select * from categories";
       if (params.length > 0) {
         sql += ` where ${params.join(" and ")}`;
       }
-      sql += ` limit $1 offset $2`;
-      console.log(sql);
+      req.query.sortMode = req.query.sortMode || "asc";
+
+      req.query.sortBy = req.query.sortBy || "id";
+
+      sql += ` order by ${req.query.sortBy} ${req.query.sortMode}`;
+
+      sql += " limit $1 offset $2";
       db.query(sql, [limit, offset], (err, data) => {
         if (err) return res.send(err);
-        //console.log(raws)
         res.render("admin/categories/list", {
           data: data.rows,
           page,
@@ -49,54 +54,54 @@ module.exports = function (db) {
   });
 
   router.get("/add", helpers.isLoggedIn, function (req, res) {
-    res.render("add");
+    res.render("admin/categories/form", {
+      data: {},
+      user: req.session.user,
+    });
   });
 
-  router.post("/add", helpers.isLoggedIn, function (req, res) {
-    task = req.body.task;
-    // query binding = use (?) to prevent hack via sql injection
+  router.post("/add", function (req, res) {
     db.query(
-      "insert into todo(task, userid) values (?,?) ",
-      [task, req.session.user.id],
-      (err, raws) => {
+      "insert into categories(name) values ($1)",
+      [req.body.name],
+      (err) => {
         if (err) return res.send(err);
-        console.log(raws);
-        res.redirect("/");
+        res.redirect("/categories");
       }
     );
   });
 
   router.get("/delete/:id", helpers.isLoggedIn, function (req, res) {
     const id = Number(req.params.id);
-    db.query("delete from todo where id = ? ", [id], (err, raws) => {
+    db.query("delete from categories where id = $1 ", [id], (err) => {
       if (err) return res.send(err);
-      req.flash("loginMessage", "Task berhasil dihapus");
-      console.log(raws);
-      res.redirect("/");
+      req.flash("successMessage", `ID : ${id} berhasil dihapus`);
+
+      res.redirect("/categories");
     });
   });
 
   router.get("/edit/:id", helpers.isLoggedIn, function (req, res) {
     const id = Number(req.params.id);
-    db.query("select * from todo where id = ?", [id], (err, raws) => {
-      console.log(err);
+    db.query("select * from categories where id = $1", [id], (err, raws) => {
       if (err) return res.send(err);
-      res.render("edit", { data: raws });
+      res.render("admin/categories/form", {
+        data: raws.rows[0],
+        user: req.session.user,
+      });
     });
   });
 
   router.post("/edit/:id", helpers.isLoggedIn, function (req, res) {
     const id = Number(req.params.id);
-    task = req.body.task;
-    complete = JSON.parse(req.body.complete);
     db.query(
-      "update todo set task = (?), complete = (?) where id = ?",
-      [task, complete, id],
+      "update categories set name = $1 where id = $2",
+      [req.body.name, id],
       (err, raws) => {
         console.log(err);
         if (err) return res.send(err);
         //res.render('edit', { data: raws })
-        res.redirect("/");
+        res.redirect("/categories");
       }
     );
   });
