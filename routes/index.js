@@ -8,7 +8,70 @@ const saltRounds = 10;
 /* GET home page. */
 module.exports = function (db) {
   router.get("/", function (req, res, next) {
-    res.render("index", { title: "OLX", user: req.session.user });
+    
+
+    const url =
+      req.url == "/"
+        ? "/ads?page=1&sortBy=id&sortMode=asc"
+        : req.url.replace("/", "/ads");
+
+    const params = [];
+
+    if (req.query.title) {
+      params.push(`title ilike '%${req.query.title}%'`);
+    }
+
+    if (req.query.description) {
+      params.push(`description ilike '%${req.query.description}%'`);
+    }
+
+    if (req.query.category) {
+      params.push(`category = ${req.query.category}`);
+    }
+
+    const page = req.query.page || 1;
+    const limit = 10;
+    const offset = (page - 1) * limit;
+    let sql = "select count(*) as total from ads";
+    if (params.length > 0) {
+      sql += ` where ${params.join(" and ")}`;
+    }
+    db.query(sql, (err, data) => {
+      const jumlahHalaman = Math.ceil(data.rows[0].total / limit);
+      sql = "select * from ads";
+      if (params.length > 0) {
+        sql += ` where ${params.join(" and ")}`;
+      }
+      req.query.sortMode = req.query.sortMode || "asc";
+
+      req.query.sortBy = req.query.sortBy || "id";
+
+      sql += ` order by ${req.query.sortBy} ${req.query.sortMode}`;
+
+      sql += " limit $1 offset $2";
+      db.query(sql, [limit, offset], (err, data) => {
+        if (err) return res.send(err);
+        db.query("select * from categories order by id", (err, categories) => {
+          if (err) return res.send(err);
+          db.query("select * from users order by id", (err, users) => {
+            if (err) return res.send(err);
+            console.log(data.rows)
+            res.render("index", {
+              data: data.rows,
+              page,
+              jumlahHalaman,
+              query: req.query,
+              url,
+              user: req.session.user,
+              categories: categories.rows,
+              users: users.rows,
+              successMessage: req.flash("successMessage"),
+              path: req.originalUrl,
+            });
+          });
+        });
+      });
+    });
   });
 
   router.get("/login", function (req, res) {
@@ -32,7 +95,7 @@ module.exports = function (db) {
         if (result) {
           req.session.user = user.rows[0];
           if (user.rows[0].isadmin) {
-            res.redirect("/categories");
+            res.redirect("/ads");
           } else {
             res.redirect("/");
           }

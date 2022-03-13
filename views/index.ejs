@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= title %></title>
+    <title>OLX</title>
     <link rel="stylesheet" href="/stylesheets/style.css" />
     <link rel="stylesheet" href="/stylesheets/carousel.css" />
     <script
@@ -140,11 +140,13 @@
         </div>
       </div>
       <div class="ads">
+        <% data.forEach(item => { %>
         <div class="item-ads">
-          <img src="/images/ads/ducatiads.jpg" alt="" />
-          <h2>price</h2>
-          <p>title</p>
+          <img src="/images/ads/<%= item.pictures[0] %>" alt="" />
+          <h2> <%= item.price %> </h2>
+          <p> <%= item.title %> </p>
         </div>
+        <% }) %>
       </div>
     </div>
 
