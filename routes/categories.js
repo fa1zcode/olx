@@ -41,6 +41,7 @@ module.exports = function (db) {
       sql += " limit $1 offset $2";
       db.query(sql, [limit, offset], (err, data) => {
         if (err) return res.send(err);
+        console.log(jumlahHalaman)
         res.render("admin/categories/list", {
           data: data.rows,
           page,
